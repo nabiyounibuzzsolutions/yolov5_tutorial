@@ -16,7 +16,7 @@ app = Flask(__name__)
 @app.route('/detect', methods=["POST"])
 def object_detector():
 	# reading passed arguments as a json variable
-	image_path = request.get_json(Force=True)
+	image_path = request.form.get("image_path")
 	current_app.logger.info("\nObject detection for the image {}\n".format(image_path))
 	# craeting aclient for uploading images to the GCP storage
 	storage_client = storage.Client.from_service_account_json(GOOGLE_APPLICATION_CREDENTIALS)
@@ -37,3 +37,16 @@ def object_detector():
 	results = model(img).xyxy[0].numpy()
 	# returning the detected objects info to the user
 	return results
+
+if __name__ == '__main__':
+    if not app.config['LOCAL']:
+        try:
+            import googleclouddebugger
+            googleclouddebugger.enable(
+                breakpoint_enable_canary=False
+            )
+        except ImportError:
+            pass
+    app.debug = True
+    with app.app_context():
+        app.run(host="localhost", port=8080, debug=True)
